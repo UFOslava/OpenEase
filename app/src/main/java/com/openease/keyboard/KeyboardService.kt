@@ -29,11 +29,18 @@ class KeyboardService : InputMethodService(), LifecycleOwner, ViewModelStoreOwne
 
     override fun onCreate() {
         super.onCreate()
+        com.vanniktech.emoji.EmojiManager.install(com.vanniktech.emoji.google.GoogleEmojiProvider())
         savedStateRegistryController.performRestore(null)
         lifecycleRegistry.handleLifecycleEvent(Lifecycle.Event.ON_CREATE)
     }
 
     override fun onCreateInputView(): View {
+        window?.window?.decorView?.let { decorView ->
+            decorView.setViewTreeLifecycleOwner(this)
+            decorView.setViewTreeViewModelStoreOwner(this)
+            decorView.setViewTreeSavedStateRegistryOwner(this)
+        }
+
         val composeView = ComposeView(this).apply {
             setViewTreeLifecycleOwner(this@KeyboardService)
             setViewTreeViewModelStoreOwner(this@KeyboardService)
@@ -51,8 +58,17 @@ class KeyboardService : InputMethodService(), LifecycleOwner, ViewModelStoreOwne
                     }
                     startActivity(intent)
                 },
-                onEmojiClick = {
-                    currentInputConnection?.commitText("😊", 1)
+                onBackspaceClick = {
+                    controller.handleDelete(currentInputConnection)
+                },
+                onHideKeyboardClick = {
+                    requestHideSelf(0)
+                },
+                onMoveCursorLeft = {
+                    sendDownUpKeyEvents(android.view.KeyEvent.KEYCODE_DPAD_LEFT)
+                },
+                onMoveCursorRight = {
+                    sendDownUpKeyEvents(android.view.KeyEvent.KEYCODE_DPAD_RIGHT)
                 }
             )
         }

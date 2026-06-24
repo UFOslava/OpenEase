@@ -17,8 +17,29 @@ class KeyboardControllerTest {
     }
 
     @Test
+    fun handleKeyPress_commitsEmoji() {
+        controller.handleKeyPress("😊", inputConnection)
+        verify(exactly = 1) { inputConnection.commitText("😊", 1) }
+    }
+
+    @Test
     fun handleDelete_deletesSurroundingText() {
+        io.mockk.every { inputConnection.getTextBeforeCursor(20, 0) } returns null
         controller.handleDelete(inputConnection)
         verify(exactly = 1) { inputConnection.deleteSurroundingText(1, 0) }
+    }
+
+    @Test
+    fun handleDelete_withNormalText_deletesOneChar() {
+        io.mockk.every { inputConnection.getTextBeforeCursor(20, 0) } returns "abc"
+        controller.handleDelete(inputConnection)
+        verify(exactly = 1) { inputConnection.deleteSurroundingText(1, 0) }
+    }
+
+    @Test
+    fun handleDelete_withEmoji_deletesTwoChars() {
+        io.mockk.every { inputConnection.getTextBeforeCursor(20, 0) } returns "ab😊"
+        controller.handleDelete(inputConnection)
+        verify(exactly = 1) { inputConnection.deleteSurroundingText(2, 0) }
     }
 }

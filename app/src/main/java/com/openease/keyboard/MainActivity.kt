@@ -13,6 +13,7 @@ import com.openease.keyboard.theme.OpenEaseTheme
 class MainActivity : ComponentActivity() {
   override fun onCreate(savedInstanceState: Bundle?) {
     super.onCreate(savedInstanceState)
+    com.vanniktech.emoji.EmojiManager.install(com.vanniktech.emoji.google.GoogleEmojiProvider())
 
     enableEdgeToEdge()
     setContent {

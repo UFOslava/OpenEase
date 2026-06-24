@@ -1,5 +1,14 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
 
-    <style name="Theme.OpenEase" parent="android:Theme.Material.Light.NoActionBar" />
+    <style name="Theme.OpenEase" parent="Theme.AppCompat.NoActionBar">
+        <item name="emojiBackgroundColor">#1E1E24</item>
+        <item name="emojiTextColor">#FFFFFF</item>
+        <item name="emojiTextSecondaryColor">#8E8E93</item>
+        <item name="emojiDividerColor">#2E2F3E</item>
+        <item name="colorPrimary">#8E8E93</item>
+        <item name="colorAccent">#FFFFFF</item>
+        <item name="android:colorPrimary">#8E8E93</item>
+        <item name="android:colorAccent">#FFFFFF</item>
+    </style>
 </resources>
