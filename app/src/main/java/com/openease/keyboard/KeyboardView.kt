@@ -150,7 +150,12 @@ fun KeyboardView(
 
     fun executeKeyboardCommand(command: KeyboardCommand) {
         when (command) {
-            is KeyboardCommand.KeyStroke -> onKeyClick(command.text)
+            is KeyboardCommand.TypeString -> {
+                if (command.cleanText.isNotEmpty()) {
+                    onKeyClick(command.cleanText)
+                }
+            }
+            KeyboardCommand.CarriageReturn -> onKeyClick("\n")
             KeyboardCommand.OpenEmojiDrawer -> isEmojiDrawerOpen = true
             KeyboardCommand.OpenSettings -> onSettingsClick()
             KeyboardCommand.SmartBackspace -> onBackspaceClick()

@@ -1,7 +1,9 @@
 package com.openease.keyboard
 
 sealed interface KeyboardCommand {
-    data class KeyStroke(val text: String) : KeyboardCommand
+    data class TypeString(val text: String) : KeyboardCommand {
+        val cleanText: String = filterPrintableAscii(text)
+    }
     object OpenEmojiDrawer : KeyboardCommand
     object OpenSettings : KeyboardCommand
     object SmartBackspace : KeyboardCommand
@@ -12,6 +14,7 @@ sealed interface KeyboardCommand {
     object DecrementHeight : KeyboardCommand
     object IncrementHorizontalOffset : KeyboardCommand
     object DecrementHorizontalOffset : KeyboardCommand
+    object CarriageReturn : KeyboardCommand
 }
 
 data class LookupKey(
@@ -36,12 +39,12 @@ object InteractionLookupEngine {
         map[LookupKey("02", InteractionType.TAP, null)] = KeyboardCommand.SmartBackspace
 
         // 4. "03" tap is carriage return
-        map[LookupKey("03", InteractionType.TAP, null)] = KeyboardCommand.KeyStroke("\n")
+        map[LookupKey("03", InteractionType.TAP, null)] = KeyboardCommand.CarriageReturn
 
         // 5. "13", "23", and "33" taps are space
-        map[LookupKey("13", InteractionType.TAP, null)] = KeyboardCommand.KeyStroke(" ")
-        map[LookupKey("23", InteractionType.TAP, null)] = KeyboardCommand.KeyStroke(" ")
-        map[LookupKey("33", InteractionType.TAP, null)] = KeyboardCommand.KeyStroke(" ")
+        map[LookupKey("13", InteractionType.TAP, null)] = KeyboardCommand.TypeString(" ")
+        map[LookupKey("23", InteractionType.TAP, null)] = KeyboardCommand.TypeString(" ")
+        map[LookupKey("33", InteractionType.TAP, null)] = KeyboardCommand.TypeString(" ")
 
         // 6. "W" drag is cursor left, "E" drag is cursor right (only for spacebar squares 13, 23, and 33)
         val spacebarSquares = listOf("13", "23", "33")
@@ -59,7 +62,7 @@ object InteractionLookupEngine {
         map[LookupKey("00", InteractionType.DRAG, CompassDirection.E)] = KeyboardCommand.IncrementHorizontalOffset
 
         // Hardcode "11" tap -> "k" stroke
-        map[LookupKey("11", InteractionType.TAP, null)] = KeyboardCommand.KeyStroke("k")
+        map[LookupKey("11", InteractionType.TAP, null)] = KeyboardCommand.TypeString("k")
 
         lookupTable = map
     }
