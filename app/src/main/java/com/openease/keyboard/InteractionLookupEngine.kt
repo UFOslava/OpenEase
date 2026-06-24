@@ -2,7 +2,7 @@ package com.openease.keyboard
 
 sealed interface KeyboardCommand {
     data class TypeString(val text: String) : KeyboardCommand {
-        val cleanText: String = filterPrintableAscii(text)
+        val cleanText: String = sanitizeInputText(text)
     }
     object OpenEmojiDrawer : KeyboardCommand
     object OpenSettings : KeyboardCommand
