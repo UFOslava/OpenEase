@@ -350,8 +350,8 @@ fun KeyboardView(
                                         val colWidth = W / 4f
                                         val rowHeight = H / 4f
 
-                                        val startX = (down.position.x / colWidth).toInt().coerceIn(0, 3)
-                                        val startY = (down.position.y / rowHeight).toInt().coerceIn(0, 3)
+                                        val startX = kotlin.math.floor(down.position.x / colWidth).toInt().coerceIn(0, 3)
+                                        val startY = kotlin.math.floor(down.position.y / rowHeight).toInt().coerceIn(0, 3)
                                         val squareName = "$startX$startY"
 
                                         activeSquare = squareName
@@ -401,8 +401,8 @@ fun KeyboardView(
                                             if (drag == null || !drag.pressed) break
                                             pointer = drag
 
-                                            val curX = (drag.position.x / colWidth).toInt()
-                                            val curY = (drag.position.y / rowHeight).toInt()
+                                            val curX = kotlin.math.floor(drag.position.x / colWidth).toInt()
+                                            val curY = kotlin.math.floor(drag.position.y / rowHeight).toInt()
                                             val hoverSquare = "$curX$curY"
                                             activeSquare = hoverSquare
 
