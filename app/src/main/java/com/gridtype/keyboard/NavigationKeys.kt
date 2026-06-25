@@ -1,4 +1,4 @@
-package com.openease.keyboard
+package com.gridtype.keyboard
 
 import androidx.navigation3.runtime.NavKey
 import kotlinx.serialization.Serializable

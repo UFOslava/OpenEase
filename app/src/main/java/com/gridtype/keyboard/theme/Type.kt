@@ -1,4 +1,4 @@
-package com.openease.keyboard.theme
+package com.gridtype.keyboard.theme
 
 import androidx.compose.material3.Typography
 import androidx.compose.ui.text.TextStyle

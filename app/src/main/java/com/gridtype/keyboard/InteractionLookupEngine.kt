@@ -1,4 +1,4 @@
-package com.openease.keyboard
+package com.gridtype.keyboard
 
 sealed interface KeyboardCommand {
     data class TypeString(val text: String) : KeyboardCommand {

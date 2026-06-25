@@ -1,4 +1,4 @@
-package com.openease.keyboard.theme
+package com.gridtype.keyboard.theme
 
 import android.os.Build
 import androidx.compose.foundation.isSystemInDarkTheme
@@ -30,7 +30,7 @@ private val LightColorScheme =
   )
 
 @Composable
-fun OpenEaseTheme(
+fun GridTypeTheme(
   darkTheme: Boolean = isSystemInDarkTheme(),
   // Dynamic color is available on Android 12+
   dynamicColor: Boolean = true,

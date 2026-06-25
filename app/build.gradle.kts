@@ -5,10 +5,10 @@ plugins {
 }
 
 android {
-    namespace = "com.openease.keyboard"
+    namespace = "com.gridtype.keyboard"
     compileSdk = 36
     defaultConfig {
-        applicationId = "com.openease.keyboard"
+        applicationId = "com.gridtype.keyboard"
         minSdk = 26
         targetSdk = 36
         versionCode = 1

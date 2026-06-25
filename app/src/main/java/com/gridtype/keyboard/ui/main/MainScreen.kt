@@ -1,4 +1,4 @@
-package com.openease.keyboard.ui.main
+package com.gridtype.keyboard.ui.main
 
 import android.content.Context
 import android.content.Intent
@@ -55,8 +55,8 @@ import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleEventObserver
 import androidx.lifecycle.compose.LocalLifecycleOwner
 import androidx.navigation3.runtime.NavKey
-import com.openease.keyboard.Preferences
-import com.openease.keyboard.Setup
+import com.gridtype.keyboard.Preferences
+import com.gridtype.keyboard.Setup
 import kotlin.math.roundToInt
 
 @Composable
@@ -106,7 +106,7 @@ fun MainScreen(
 
             // App Title with Gradient (Remains as nice custom text)
             Text(
-                text = "OpenEase",
+                text = "GridType",
                 style = androidx.compose.ui.text.TextStyle(
                     fontSize = 40.sp,
                     fontWeight = FontWeight.ExtraBold,
@@ -130,7 +130,7 @@ fun MainScreen(
             SettingsCategoryHeader(title = "Keyboard Activation")
 
             SettingsListItem(
-                title = "Turn on OpenEase keyboard",
+                title = "Turn on GridType keyboard",
                 subtitle = if (isEnabled && isSelected) "Keyboard is fully active" else "Setup required",
                 trailingContent = {
                     val statusText = if (isEnabled && isSelected) "Active" else "Setup"
@@ -169,7 +169,7 @@ fun PreferencesScreen(
     modifier: Modifier = Modifier
 ) {
     val context = LocalContext.current
-    val sharedPrefs = remember { context.getSharedPreferences("openease_settings", Context.MODE_PRIVATE) }
+    val sharedPrefs = remember { context.getSharedPreferences("gridtype_settings", Context.MODE_PRIVATE) }
 
     var showDebugInfo by remember {
         mutableStateOf(sharedPrefs.getBoolean("show_interaction_debug_info", true))
@@ -311,7 +311,7 @@ fun SetupScreen(
             SetupStepItem(
                 stepNumber = "1",
                 title = "Enable Keyboard",
-                description = "Turn on OpenEase Keyboard in System settings.",
+                description = "Turn on GridType Keyboard in System settings.",
                 isCompleted = isEnabled,
                 actionLabel = "Enable",
                 onActionClick = {
@@ -332,7 +332,7 @@ fun SetupScreen(
             SetupStepItem(
                 stepNumber = "2",
                 title = "Select Keyboard",
-                description = "Choose OpenEase Keyboard as your active input method.",
+                description = "Choose GridType Keyboard as your active input method.",
                 isCompleted = isSelected,
                 actionLabel = "Choose",
                 enabled = isEnabled,
@@ -350,7 +350,7 @@ fun SetupScreen(
                     contentAlignment = Alignment.Center
                 ) {
                     Text(
-                        text = "🎉 OpenEase Keyboard is active!",
+                        text = "🎉 GridType Keyboard is active!",
                         color = Color(0xFF4BB543),
                         fontWeight = FontWeight.Bold,
                         style = MaterialTheme.typography.titleMedium

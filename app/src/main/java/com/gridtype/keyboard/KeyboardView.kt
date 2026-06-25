@@ -1,4 +1,4 @@
-package com.openease.keyboard
+package com.gridtype.keyboard
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -64,7 +64,7 @@ fun KeyboardView(
     modifier: Modifier = Modifier
 ) {
     val context = LocalContext.current
-    val sharedPrefs = remember { context.getSharedPreferences("openease_settings", android.content.Context.MODE_PRIVATE) }
+    val sharedPrefs = remember { context.getSharedPreferences("gridtype_settings", android.content.Context.MODE_PRIVATE) }
 
     val vibrator = remember { context.getSystemService(android.os.Vibrator::class.java) }
     fun vibrateDot() {
@@ -250,7 +250,7 @@ fun KeyboardView(
                 // Vanniktech EmojiView wrapped in AndroidView
                 AndroidView(
                     factory = { context ->
-                        val themedContext = android.view.ContextThemeWrapper(context, com.openease.keyboard.R.style.Theme_OpenEase)
+                        val themedContext = android.view.ContextThemeWrapper(context, com.gridtype.keyboard.R.style.Theme_GridType)
                         com.vanniktech.emoji.EmojiView(themedContext).apply {
                             emojiViewRef = this
                             

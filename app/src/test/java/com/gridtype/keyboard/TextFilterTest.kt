@@ -1,4 +1,4 @@
-package com.openease.keyboard
+package com.gridtype.keyboard
 
 import org.junit.Assert.assertEquals
 import org.junit.Test

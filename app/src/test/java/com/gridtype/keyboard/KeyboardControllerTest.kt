@@ -1,4 +1,4 @@
-package com.openease.keyboard
+package com.gridtype.keyboard
 
 import android.view.inputmethod.InputConnection
 import io.mockk.mockk

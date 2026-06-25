@@ -1,4 +1,4 @@
-package com.openease.keyboard
+package com.gridtype.keyboard
 
 /**
  * Sanitizes input text to block unsafe or undesirable Unicode characters:

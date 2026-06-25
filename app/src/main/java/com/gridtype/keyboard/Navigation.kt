@@ -1,4 +1,4 @@
-package com.openease.keyboard
+package com.gridtype.keyboard
 
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.safeDrawingPadding
@@ -8,9 +8,9 @@ import androidx.compose.ui.unit.dp
 import androidx.navigation3.runtime.entryProvider
 import androidx.navigation3.runtime.rememberNavBackStack
 import androidx.navigation3.ui.NavDisplay
-import com.openease.keyboard.ui.main.MainScreen
-import com.openease.keyboard.ui.main.SetupScreen
-import com.openease.keyboard.ui.main.PreferencesScreen
+import com.gridtype.keyboard.ui.main.MainScreen
+import com.gridtype.keyboard.ui.main.SetupScreen
+import com.gridtype.keyboard.ui.main.PreferencesScreen
 
 @Composable
 fun MainNavigation() {
