@@ -133,6 +133,8 @@ fun KeyboardView(
     }
 
     DisposableEffect(sharedPrefs) {
+        InteractionLookupEngine.loadLayout(context)
+
         val listener = android.content.SharedPreferences.OnSharedPreferenceChangeListener { _, key ->
             if (key == "show_interaction_debug_info") {
                 showDebugInfo = sharedPrefs.getBoolean("show_interaction_debug_info", true)
@@ -141,6 +143,8 @@ fun KeyboardView(
                 longPressDelay = ((saved / 10f).roundToInt() * 10).coerceIn(10, 2000)
             } else if (key == "keyboard_aspect_ratio") {
                 keyboardAspectRatio = sharedPrefs.getInt("keyboard_aspect_ratio", 110).coerceIn(70, 130)
+            } else if (key == "active_layout") {
+                InteractionLookupEngine.loadLayout(context)
             } else if (key == heightPrefKey) {
                 keyboardHeight = sharedPrefs.getFloat(heightPrefKey, 240f).coerceIn(180f, screenWidthDp).dp
             } else if (key == prefKey) {
@@ -170,6 +174,16 @@ fun KeyboardView(
             KeyboardCommand.HideKeyboard -> onHideKeyboardClick()
             KeyboardCommand.MoveCursorLeft -> onMoveCursorLeft()
             KeyboardCommand.MoveCursorRight -> onMoveCursorRight()
+            KeyboardCommand.CycleLayout -> {
+                val layoutsList = getLayoutsList(context)
+                val activeLayoutName = sharedPrefs.getString("active_layout", "English") ?: "English"
+                val currentIndex = layoutsList.indexOf(activeLayoutName)
+                if (currentIndex != -1 && layoutsList.isNotEmpty()) {
+                    val nextIndex = (currentIndex + 1) % layoutsList.size
+                    val nextLayout = layoutsList[nextIndex]
+                    sharedPrefs.edit().putString("active_layout", nextLayout).apply()
+                }
+            }
             KeyboardCommand.IncrementHeight -> {
                 val newHeight = (keyboardHeight.value + 20f).coerceIn(180f, screenWidthDp)
                 keyboardHeight = newHeight.dp

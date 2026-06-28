@@ -6,3 +6,4 @@ import kotlinx.serialization.Serializable
 @Serializable data object Main : NavKey
 @Serializable data object Setup : NavKey
 @Serializable data object Preferences : NavKey
+@Serializable data class EditLayout(val layoutName: String) : NavKey

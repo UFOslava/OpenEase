@@ -30,6 +30,13 @@ fun MainNavigation() {
         entry<Preferences> {
           PreferencesScreen(onBackClick = { backStack.removeLastOrNull() }, modifier = Modifier.safeDrawingPadding().padding(16.dp))
         }
+        entry<EditLayout> { entry ->
+          com.gridtype.keyboard.ui.main.EditLayoutScreen(
+              layoutName = entry.layoutName,
+              onBackClick = { backStack.removeLastOrNull() },
+              modifier = Modifier.safeDrawingPadding().padding(16.dp)
+          )
+        }
       },
   )
 }

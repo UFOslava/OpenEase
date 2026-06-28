@@ -1,0 +1,54 @@
+/*
+  GridType Keyboard Language Layout File
+  Format: JSON with comments
+
+  Instructions:
+  - This file defines the base character map for the keyboard.
+  - "mappings" is an array of key-value pairs mapping a square, gesture, and optional direction to a string value.
+
+  Possible Values & Constraints:
+  - "square": Two-digit coordinate of the grid cell (from "00" to "33").
+    - Row 0 (Top): "00", "10", "20", "30"
+    - Row 1: "01", "11", "21", "31"
+    - Row 2: "02", "12", "22", "32"
+    - Row 3 (Bottom): "03", "13", "23", "33"
+  - "gesture": The type of touch gesture. Supported values:
+    - "tap": A quick press and release.
+    - "long_press": Press and hold.
+    - "drag": Swiping from the square to an adjacent square.
+    - "drag_return": Swiping to an adjacent square and returning.
+    - "bolt": A fast swipe gesture.
+    - "loop": A circular gesture.
+  - "direction": The direction of the swipe/gesture. Required for swipe gestures, null for taps/long_press.
+    - Supported values: "N", "NE", "E", "SE", "S", "SW", "W", "NW", or null.
+  - "value": The text to be typed (up to 255 characters). Filtered with a Unicode safety filter.
+
+  Examples:
+  - Tap on square "12" types "a":
+    { "square": "12", "gesture": "tap", "direction": null, "value": "a" }
+  - S-drag on square "11" types "p":
+    { "square": "11", "gesture": "drag", "direction": "S", "value": "p" }
+*/
+{
+  "name": "English",
+  "mappings": [
+    {
+      "square": "11",
+      "gesture": "tap",
+      "direction": null,
+      "value": "k"
+    },
+    {
+      "square": "12",
+      "gesture": "tap",
+      "direction": null,
+      "value": "a"
+    },
+    {
+      "square": "22",
+      "gesture": "tap",
+      "direction": null,
+      "value": "b"
+    }
+  ]
+}
