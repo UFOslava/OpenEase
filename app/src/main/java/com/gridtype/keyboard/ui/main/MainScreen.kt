@@ -180,6 +180,11 @@ fun PreferencesScreen(
         mutableStateOf(rounded)
     }
 
+    var keyboardAspectRatio by remember {
+        val saved = sharedPrefs.getInt("keyboard_aspect_ratio", 110)
+        mutableStateOf(saved.coerceIn(70, 130))
+    }
+
     Surface(
         modifier = Modifier.fillMaxSize(),
         color = MaterialTheme.colorScheme.background
@@ -235,6 +240,18 @@ fun PreferencesScreen(
                 onValueChange = { newValue ->
                     longPressDelay = newValue
                     sharedPrefs.edit().putInt("long_press_delay", newValue).apply()
+                }
+            )
+
+            // Slider Item: Keyboard aspect ratio
+            SettingsPercentSliderItem(
+                title = "Keyboard aspect ratio",
+                subtitle = "Adjust the width percentage of the keys",
+                value = keyboardAspectRatio,
+                valueRange = 70f..130f,
+                onValueChange = { newValue ->
+                    keyboardAspectRatio = newValue
+                    sharedPrefs.edit().putInt("keyboard_aspect_ratio", newValue).apply()
                 }
             )
         }
@@ -552,6 +569,73 @@ fun SettingsSliderItem(
             onValueChange = { newValue ->
                 val rounded = (newValue / 10f).roundToInt() * 10
                 onValueChange(rounded.coerceIn(10, 2000))
+            },
+            valueRange = valueRange,
+            colors = SliderDefaults.colors(
+                thumbColor = MaterialTheme.colorScheme.primary,
+                activeTrackColor = MaterialTheme.colorScheme.primary,
+                inactiveTrackColor = MaterialTheme.colorScheme.surfaceVariant
+            )
+        )
+        Spacer(modifier = Modifier.height(8.dp))
+        HorizontalDivider(
+            color = MaterialTheme.colorScheme.outlineVariant,
+            thickness = 0.5.dp,
+            modifier = Modifier.padding(top = 8.dp)
+        )
+    }
+}
+
+@Composable
+fun SettingsPercentSliderItem(
+    title: String,
+    subtitle: String? = null,
+    value: Int,
+    valueRange: ClosedFloatingPointRange<Float>,
+    onValueChange: (Int) -> Unit,
+    modifier: Modifier = Modifier
+) {
+    Column(
+        modifier = modifier
+            .fillMaxWidth()
+            .padding(horizontal = 16.dp, vertical = 16.dp)
+    ) {
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.SpaceBetween
+        ) {
+            Column(modifier = Modifier.weight(1f)) {
+                Text(
+                    text = title,
+                    style = MaterialTheme.typography.bodyLarge,
+                    color = MaterialTheme.colorScheme.onSurface,
+                    fontWeight = FontWeight.Medium
+                )
+                if (subtitle != null) {
+                    Text(
+                        text = subtitle,
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        modifier = Modifier.padding(top = 2.dp)
+                    )
+                }
+            }
+            Spacer(modifier = Modifier.width(16.dp))
+            Text(
+                text = "$value%",
+                style = MaterialTheme.typography.titleMedium,
+                color = MaterialTheme.colorScheme.primary,
+                fontWeight = FontWeight.Bold,
+                modifier = Modifier.width(80.dp),
+                textAlign = androidx.compose.ui.text.style.TextAlign.End
+            )
+        }
+        Spacer(modifier = Modifier.height(12.dp))
+        Slider(
+            value = value.toFloat(),
+            onValueChange = { newValue ->
+                onValueChange(newValue.roundToInt().coerceIn(70, 130))
             },
             valueRange = valueRange,
             colors = SliderDefaults.colors(

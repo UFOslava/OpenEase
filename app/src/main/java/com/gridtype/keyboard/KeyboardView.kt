@@ -100,11 +100,16 @@ fun KeyboardView(
         val saved = sharedPrefs.getFloat(heightPrefKey, 240f)
         mutableStateOf(saved.coerceIn(180f, screenWidthDp).dp)
     }
+    var keyboardAspectRatio by remember {
+        val saved = sharedPrefs.getInt("keyboard_aspect_ratio", 110)
+        mutableStateOf(saved.coerceIn(70, 130))
+    }
     val density = LocalDensity.current
     val currentHeight = keyboardHeight
 
     // Bounds for the horizontal offset
-    val maxOffset = (screenWidthDp - keyboardHeight.value) / 2f
+    val gridWidthDp = keyboardHeight.value * (keyboardAspectRatio / 100f)
+    val maxOffset = (screenWidthDp - gridWidthDp) / 2f
     val minOffset = -maxOffset
     val defaultOffset = ((screenWidthDp * 0.25f) / 20f).roundToInt() * 20f
 
@@ -134,10 +139,13 @@ fun KeyboardView(
             } else if (key == "long_press_delay") {
                 val saved = sharedPrefs.getInt("long_press_delay", 670)
                 longPressDelay = ((saved / 10f).roundToInt() * 10).coerceIn(10, 2000)
+            } else if (key == "keyboard_aspect_ratio") {
+                keyboardAspectRatio = sharedPrefs.getInt("keyboard_aspect_ratio", 110).coerceIn(70, 130)
             } else if (key == heightPrefKey) {
                 keyboardHeight = sharedPrefs.getFloat(heightPrefKey, 240f).coerceIn(180f, screenWidthDp).dp
             } else if (key == prefKey) {
-                val maxOffsetVal = (screenWidthDp - keyboardHeight.value) / 2f
+                val gridWidthVal = keyboardHeight.value * (keyboardAspectRatio / 100f)
+                val maxOffsetVal = (screenWidthDp - gridWidthVal) / 2f
                 val minOffsetVal = -maxOffsetVal
                 gridHorizontalOffset = sharedPrefs.getFloat(prefKey, defaultOffset).coerceIn(minOffsetVal, maxOffsetVal)
             }
@@ -173,14 +181,16 @@ fun KeyboardView(
                 sharedPrefs.edit().putFloat(heightPrefKey, newHeight).apply()
             }
             KeyboardCommand.IncrementHorizontalOffset -> {
-                val maxOffsetVal = (screenWidthDp - keyboardHeight.value) / 2f
+                val gridWidthVal = keyboardHeight.value * (keyboardAspectRatio / 100f)
+                val maxOffsetVal = (screenWidthDp - gridWidthVal) / 2f
                 val minOffsetVal = -maxOffsetVal
                 val newOffset = (gridHorizontalOffset + 20f).coerceIn(minOffsetVal, maxOffsetVal)
                 gridHorizontalOffset = newOffset
                 sharedPrefs.edit().putFloat(prefKey, newOffset).apply()
             }
             KeyboardCommand.DecrementHorizontalOffset -> {
-                val maxOffsetVal = (screenWidthDp - keyboardHeight.value) / 2f
+                val gridWidthVal = keyboardHeight.value * (keyboardAspectRatio / 100f)
+                val maxOffsetVal = (screenWidthDp - gridWidthVal) / 2f
                 val minOffsetVal = -maxOffsetVal
                 val newOffset = (gridHorizontalOffset - 20f).coerceIn(minOffsetVal, maxOffsetVal)
                 gridHorizontalOffset = newOffset
@@ -332,16 +342,18 @@ fun KeyboardView(
                 modifier = Modifier.fillMaxSize(),
                 contentAlignment = Alignment.Center
             ) {
-                // Centered Grid Container of size currentHeight x currentHeight
+                // Centered Grid Container with Aspect Ratio Width
+                val gridWidth = currentHeight * (keyboardAspectRatio / 100f)
                 Box(
                     modifier = Modifier
-                        .size(currentHeight)
+                        .width(gridWidth)
+                        .height(currentHeight)
                         .offset(x = currentOffset.dp)
                 ) {
                     Column(
                         modifier = Modifier
                             .fillMaxSize()
-                            .pointerInput(Unit) {
+                            .pointerInput(currentHeight, keyboardAspectRatio) {
                                 awaitPointerEventScope {
                                     while (true) {
                                         val down = awaitFirstDown()
@@ -494,7 +506,8 @@ fun KeyboardView(
                                     val isPressed = activeSquare == name
                                     Box(
                                         modifier = Modifier
-                                            .size(currentHeight / 4)
+                                            .width(gridWidth / 4)
+                                            .height(currentHeight / 4)
                                             .background(if (isPressed) Color(0xFF6C5DD3) else Color(0xFF2E2F3E))
                                             .border(width = 0.5.dp, color = Color(0xFF4E4F62)),
                                         contentAlignment = Alignment.Center
@@ -523,21 +536,23 @@ fun KeyboardView(
                             val isDiscarded = localInteraction.rawInteraction == listOf("DISCARDED")
 
                             androidx.compose.foundation.Canvas(modifier = Modifier.fillMaxSize()) {
-                                val squareSize = size.width / 4f
-                                val targetCenter = Offset((startX + 0.5f) * squareSize, (startY + 0.5f) * squareSize)
+                                val squareWidth = size.width / 4f
+                                val squareHeight = size.height / 4f
+                                val squareSize = (squareWidth + squareHeight) / 2f
+                                val targetCenter = Offset((startX + 0.5f) * squareWidth, (startY + 0.5f) * squareHeight)
 
                                 // 1. Paint background overlay if unresolved or discarded
                                 if (isDiscarded) {
                                     drawRect(
                                         color = Color(0xFF8B5A2B).copy(alpha = 0.5f * currentAlpha),
-                                        topLeft = Offset(startX * squareSize, startY * squareSize),
-                                        size = androidx.compose.ui.geometry.Size(squareSize, squareSize)
+                                        topLeft = Offset(startX * squareWidth, startY * squareHeight),
+                                        size = androidx.compose.ui.geometry.Size(squareWidth, squareHeight)
                                     )
                                 } else if (interaction.type == null) {
                                     drawRect(
                                         color = Color(0xFFEF4444).copy(alpha = 0.4f * currentAlpha),
-                                        topLeft = Offset(startX * squareSize, startY * squareSize),
-                                        size = androidx.compose.ui.geometry.Size(squareSize, squareSize)
+                                        topLeft = Offset(startX * squareWidth, startY * squareHeight),
+                                        size = androidx.compose.ui.geometry.Size(squareWidth, squareHeight)
                                     )
                                 }
 
@@ -625,8 +640,8 @@ fun KeyboardView(
                                     if (discardedName.length == 2) {
                                         val dx = discardedName[0].toString().toIntOrNull() ?: 0
                                         val dy = discardedName[1].toString().toIntOrNull() ?: 0
-                                        val cx = (dx + 0.5f) * squareSize
-                                        val cy = (dy + 0.5f) * squareSize
+                                        val cx = (dx + 0.5f) * squareWidth
+                                        val cy = (dy + 0.5f) * squareHeight
                                         val offset = 10.dp.toPx()
                                         drawLine(
                                             color = Color.Red.copy(alpha = currentAlpha),
