@@ -114,7 +114,14 @@ object InteractionLookupEngine {
     private fun loadLayoutFileFromAssets(context: Context, assetPath: String): Map<LookupKey, KeyboardCommand> {
         val map = mutableMapOf<LookupKey, KeyboardCommand>()
         try {
-            var jsonString = context.assets.open(assetPath).bufferedReader().use { it.readText() }
+            val filename = assetPath.substringAfterLast("/")
+            val localFile = File(File(context.filesDir, "layouts"), filename)
+            
+            var jsonString = if (localFile.exists()) {
+                localFile.readText()
+            } else {
+                context.assets.open(assetPath).bufferedReader().use { it.readText() }
+            }
             // Strip comments
             jsonString = jsonString.replace(Regex("(?s)/\\*.*?\\*/|//.*?\r?\n"), "")
             val jsonObject = JSONObject(jsonString)
@@ -203,5 +210,9 @@ object InteractionLookupEngine {
         synchronized(this) {
             return activeLayoutTable[key]
         }
+    }
+
+    fun isHardcoded(square: String, type: InteractionType, direction: CompassDirection?): Boolean {
+        return hardcodedTable.containsKey(LookupKey(square, type, direction))
     }
 }

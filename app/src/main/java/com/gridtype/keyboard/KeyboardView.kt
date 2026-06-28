@@ -574,11 +574,11 @@ fun KeyboardView(
                                 if (!isDiscarded && interaction.type != null) {
                                     when (interaction.type) {
                                         InteractionType.TAP -> {
-                                            drawCircle(Color.Yellow.copy(alpha = currentAlpha), radius = 9.dp.toPx(), center = targetCenter)
+                                            drawCircle(Color(0xFFF97316).copy(alpha = currentAlpha), radius = 9.dp.toPx(), center = targetCenter)
                                         }
                                         InteractionType.LONG_PRESS -> {
                                             drawCircle(
-                                                color = Color.Yellow.copy(alpha = currentAlpha),
+                                                color = Color(0xFFEC4899).copy(alpha = currentAlpha),
                                                 radius = 24.dp.toPx(),
                                                 center = targetCenter,
                                                 style = androidx.compose.ui.graphics.drawscope.Stroke(width = 3.dp.toPx())
@@ -593,11 +593,11 @@ fun KeyboardView(
                                                 rotate(angle, pivot = targetCenter) {
                                                     val start = targetCenter
                                                     val end = Offset(targetCenter.x, targetCenter.y - length)
-                                                    drawLine(color = Color.Green.copy(alpha = currentAlpha), start = start, end = end, strokeWidth = 6.dp.toPx())
+                                                    drawLine(color = Color(0xFF22C55E).copy(alpha = currentAlpha), start = start, end = end, strokeWidth = 6.dp.toPx())
                                                     val arrowLength = 16.dp.toPx()
                                                     val arrowWidth = 12.dp.toPx()
-                                                    drawLine(color = Color.Green.copy(alpha = currentAlpha), start = end, end = Offset(end.x - arrowWidth, end.y + arrowLength), strokeWidth = 6.dp.toPx())
-                                                    drawLine(color = Color.Green.copy(alpha = currentAlpha), start = end, end = Offset(end.x + arrowWidth, end.y + arrowLength), strokeWidth = 6.dp.toPx())
+                                                    drawLine(color = Color(0xFF22C55E).copy(alpha = currentAlpha), start = end, end = Offset(end.x - arrowWidth, end.y + arrowLength), strokeWidth = 6.dp.toPx())
+                                                    drawLine(color = Color(0xFF22C55E).copy(alpha = currentAlpha), start = end, end = Offset(end.x + arrowWidth, end.y + arrowLength), strokeWidth = 6.dp.toPx())
                                                 }
                                             }
                                         }
@@ -610,13 +610,13 @@ fun KeyboardView(
                                                 rotate(angle, pivot = targetCenter) {
                                                     val start = targetCenter
                                                     val end = Offset(targetCenter.x, targetCenter.y - length)
-                                                    drawLine(color = Color.Green.copy(alpha = currentAlpha), start = start, end = end, strokeWidth = 6.dp.toPx())
+                                                    drawLine(color = Color(0xFF06B6D4).copy(alpha = currentAlpha), start = start, end = end, strokeWidth = 6.dp.toPx())
                                                     val arrowLength = 16.dp.toPx()
                                                     val arrowWidth = 12.dp.toPx()
-                                                    drawLine(color = Color.Green.copy(alpha = currentAlpha), start = end, end = Offset(end.x - arrowWidth, end.y + arrowLength), strokeWidth = 6.dp.toPx())
-                                                    drawLine(color = Color.Green.copy(alpha = currentAlpha), start = end, end = Offset(end.x + arrowWidth, end.y + arrowLength), strokeWidth = 6.dp.toPx())
-                                                    drawLine(color = Color.Green.copy(alpha = currentAlpha), start = start, end = Offset(start.x - arrowWidth, start.y - arrowLength), strokeWidth = 6.dp.toPx())
-                                                    drawLine(color = Color.Green.copy(alpha = currentAlpha), start = start, end = Offset(start.x + arrowWidth, start.y - arrowLength), strokeWidth = 6.dp.toPx())
+                                                    drawLine(color = Color(0xFF06B6D4).copy(alpha = currentAlpha), start = end, end = Offset(end.x - arrowWidth, end.y + arrowLength), strokeWidth = 6.dp.toPx())
+                                                    drawLine(color = Color(0xFF06B6D4).copy(alpha = currentAlpha), start = end, end = Offset(end.x + arrowWidth, end.y + arrowLength), strokeWidth = 6.dp.toPx())
+                                                    drawLine(color = Color(0xFF06B6D4).copy(alpha = currentAlpha), start = start, end = Offset(start.x - arrowWidth, start.y - arrowLength), strokeWidth = 6.dp.toPx())
+                                                    drawLine(color = Color(0xFF06B6D4).copy(alpha = currentAlpha), start = start, end = Offset(start.x + arrowWidth, start.y - arrowLength), strokeWidth = 6.dp.toPx())
                                                 }
                                             }
                                         }
@@ -629,17 +629,17 @@ fun KeyboardView(
                                                 rotate(angle, pivot = targetCenter) {
                                                     val start = targetCenter
                                                     val end = Offset(targetCenter.x, targetCenter.y - length)
-                                                    drawLine(color = Color.Yellow.copy(alpha = currentAlpha), start = start, end = end, strokeWidth = 6.dp.toPx())
+                                                    drawLine(color = Color(0xFFEAB308).copy(alpha = currentAlpha), start = start, end = end, strokeWidth = 6.dp.toPx())
                                                     val arrowLength = 16.dp.toPx()
                                                     val arrowWidth = 12.dp.toPx()
-                                                    drawLine(color = Color.Yellow.copy(alpha = currentAlpha), start = end, end = Offset(end.x - arrowWidth, end.y + arrowLength), strokeWidth = 6.dp.toPx())
-                                                    drawLine(color = Color.Yellow.copy(alpha = currentAlpha), start = end, end = Offset(end.x + arrowWidth, end.y + arrowLength), strokeWidth = 6.dp.toPx())
+                                                    drawLine(color = Color(0xFFEAB308).copy(alpha = currentAlpha), start = end, end = Offset(end.x - arrowWidth, end.y + arrowLength), strokeWidth = 6.dp.toPx())
+                                                    drawLine(color = Color(0xFFEAB308).copy(alpha = currentAlpha), start = end, end = Offset(end.x + arrowWidth, end.y + arrowLength), strokeWidth = 6.dp.toPx())
                                                 }
                                             }
                                         }
                                         InteractionType.LOOP -> {
                                             drawCircle(
-                                                color = Color(0xFF3B82F6).copy(alpha = currentAlpha),
+                                                color = Color(0xFF8B5CF6).copy(alpha = currentAlpha),
                                                 radius = 24.dp.toPx(),
                                                 center = targetCenter,
                                                 style = androidx.compose.ui.graphics.drawscope.Stroke(width = 3.dp.toPx())
