@@ -87,6 +87,7 @@ import androidx.lifecycle.compose.LocalLifecycleOwner
 import androidx.navigation3.runtime.NavKey
 import com.gridtype.keyboard.CompassDirection
 import com.gridtype.keyboard.EditLayout
+import com.gridtype.keyboard.CloudSync
 import com.gridtype.keyboard.InteractionLookupEngine
 import com.gridtype.keyboard.InteractionType
 import com.gridtype.keyboard.Preferences
@@ -200,6 +201,12 @@ fun MainScreen(
                 title = "Preferences",
                 subtitle = "Vibration, sound, and debug settings",
                 onClick = { onItemClick(Preferences) }
+            )
+
+            SettingsListItem(
+                title = "Cloud Sync",
+                subtitle = "Backup & restore layouts via Google Drive",
+                onClick = { onItemClick(CloudSync) }
             )
 
             Spacer(modifier = Modifier.height(16.dp))
@@ -883,7 +890,7 @@ fun GestureChooser(
                 val angleRad = angleDeg * Math.PI / 180.0
                 
                 // Inner (Drag) Text
-                val dragVal = currentMappings["drag_${dir.name.lowercase()}"]
+                val dragVal = currentMappings["drag_${dir.name}"]
                 if (!dragVal.isNullOrEmpty()) {
                     val displayText = if (dragVal.length > 1) "${dragVal.first()}..." else dragVal
                     val textLayoutResult = textMeasurer.measure(
@@ -899,7 +906,7 @@ fun GestureChooser(
                 }
                 
                 // Middle (Drag-Return) Text
-                val drVal = currentMappings["drag_return_${dir.name.lowercase()}"]
+                val drVal = currentMappings["drag_return_${dir.name}"]
                 if (!drVal.isNullOrEmpty()) {
                     val displayText = if (drVal.length > 1) "${drVal.first()}..." else drVal
                     val textLayoutResult = textMeasurer.measure(
@@ -915,7 +922,7 @@ fun GestureChooser(
                 }
                 
                 // Outer (Bolt) Text
-                val boltVal = currentMappings["bolt_${dir.name.lowercase()}"]
+                val boltVal = currentMappings["bolt_${dir.name}"]
                 if (!boltVal.isNullOrEmpty()) {
                     val displayText = if (boltVal.length > 1) "${boltVal.first()}..." else boltVal
                     val textLayoutResult = textMeasurer.measure(

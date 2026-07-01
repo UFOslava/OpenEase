@@ -7,3 +7,4 @@ import kotlinx.serialization.Serializable
 @Serializable data object Setup : NavKey
 @Serializable data object Preferences : NavKey
 @Serializable data class EditLayout(val layoutName: String) : NavKey
+@Serializable data object CloudSync : NavKey

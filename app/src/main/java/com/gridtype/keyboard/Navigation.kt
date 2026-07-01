@@ -37,6 +37,12 @@ fun MainNavigation() {
               modifier = Modifier.safeDrawingPadding().padding(16.dp)
           )
         }
+        entry<CloudSync> {
+          com.gridtype.keyboard.ui.main.CloudSyncScreen(
+              onBackClick = { backStack.removeLastOrNull() },
+              modifier = Modifier.safeDrawingPadding().padding(16.dp)
+          )
+        }
       },
   )
 }
