@@ -44,6 +44,7 @@ androidx-lifecycle-viewmodel-navigation3 = { module = "androidx.lifecycle:lifecy
 mockk = { module = "io.mockk:mockk", version.ref = "mockk" }
 mockk-android = { module = "io.mockk:mockk-android", version.ref = "mockk" }
 emoji-google = { group = "com.vanniktech", name = "emoji-google", version.ref = "emoji" }
+play-services-auth = { group = "com.google.android.gms", name = "play-services-auth", version = "20.7.0" }
 
 
 [plugins]

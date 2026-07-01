@@ -1,6 +1,9 @@
 package com.gridtype.keyboard.ui.main
 
+import android.app.Activity
 import android.content.Context
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -28,34 +31,44 @@ import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
+import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextField
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.google.android.gms.auth.GoogleAuthUtil
+import com.google.android.gms.auth.api.signin.GoogleSignIn
+import com.google.android.gms.auth.api.signin.GoogleSignInOptions
+import com.google.android.gms.common.api.ApiException
+import com.google.android.gms.common.api.Scope
+import com.gridtype.keyboard.DriveNode
 import com.gridtype.keyboard.FileNode
 import com.gridtype.keyboard.FolderNode
 import com.gridtype.keyboard.GoogleDriveClient
 import com.gridtype.keyboard.getLayoutsList
-import com.gridtype.keyboard.createNewLayout
 import com.gridtype.keyboard.deleteLayout
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import java.io.File
 import org.json.JSONObject
 
@@ -79,59 +92,111 @@ fun CloudSyncScreen(
     modifier: Modifier = Modifier
 ) {
     val context = LocalContext.current
-    var emailInput by remember { mutableStateOf("developer@gridtype.com") }
+    val coroutineScope = rememberCoroutineScope()
     
-    // Trigger recomposition on file changes
+    var emailInput by remember { mutableStateOf("developer@gridtype.com") }
+    var useSimulatorToggle by remember { mutableStateOf(GoogleDriveClient.useSimulator) }
+    
     var syncTrigger by remember { mutableStateOf(0) }
+    var isLoading by remember { mutableStateOf(false) }
+    
+    var filesList by remember { mutableStateOf<List<DriveNode>>(emptyList()) }
+    var syncItems by remember { mutableStateOf<List<LayoutSyncItem>>(emptyList()) }
     
     val localLayouts = remember(syncTrigger) { getLayoutsList(context) }
-    val currentRemoteNodes = remember(GoogleDriveClient.isConnected, GoogleDriveClient.currentPath.size, syncTrigger) {
-        GoogleDriveClient.listCurrentFiles()
-    }
     
-    val syncItems = remember(localLayouts, currentRemoteNodes, syncTrigger) {
-        val items = mutableListOf<LayoutSyncItem>()
-        val processedNames = mutableSetOf<String>()
-        
-        // 1. Process Local Layouts
-        for (localName in localLayouts) {
-            val file = File(File(context.filesDir, "layouts"), "$localName.json")
-            val localJson = if (file.exists()) file.readText().replace("\r", "") else null
+    // Asynchronous loader to populate Explorer and Layout comparison board
+    LaunchedEffect(
+        GoogleDriveClient.isConnected,
+        GoogleDriveClient.useSimulator,
+        GoogleDriveClient.simulatedPath.size,
+        GoogleDriveClient.realPathStack.size,
+        syncTrigger
+    ) {
+        if (GoogleDriveClient.isConnected) {
+            isLoading = true
             
-            // Search remote layouts in current folder
-            val remoteFileName = "${localName.lowercase().replace(" ", "_")}_backup.json"
-            val remoteJson = GoogleDriveClient.getFileContent(remoteFileName)?.replace("\r", "")
+            // List files in current directory
+            filesList = GoogleDriveClient.listCurrentFiles()
             
-            if (remoteJson != null) {
-                // Exists on both sides. Compare content.
-                // Normalize JSON strings by removing whitespace/formatting
-                val localNormalized = localJson?.replace(Regex("\\s+"), "")
-                val remoteNormalized = remoteJson.replace(Regex("\\s+"), "")
-                val status = if (localNormalized == remoteNormalized) SyncStatus.SYNCED else SyncStatus.MODIFIED
-                items.add(LayoutSyncItem(localName, status, localJson, remoteJson))
-            } else {
-                items.add(LayoutSyncItem(localName, SyncStatus.LOCAL_ONLY, localJson, null))
+            // Compute layout sync status list
+            val items = mutableListOf<LayoutSyncItem>()
+            val processedNames = mutableSetOf<String>()
+            
+            for (localName in localLayouts) {
+                val file = File(File(context.filesDir, "layouts"), "$localName.json")
+                val localJson = if (file.exists()) file.readText().replace("\r", "") else null
+                
+                val remoteFileName = "${localName.lowercase().replace(" ", "_")}_backup.json"
+                val remoteJson = GoogleDriveClient.getFileContent(remoteFileName)?.replace("\r", "")
+                
+                if (remoteJson != null) {
+                    val localNormalized = localJson?.replace(Regex("\\s+"), "")
+                    val remoteNormalized = remoteJson.replace(Regex("\\s+"), "")
+                    val status = if (localNormalized == remoteNormalized) SyncStatus.SYNCED else SyncStatus.MODIFIED
+                    items.add(LayoutSyncItem(localName, status, localJson, remoteJson))
+                } else {
+                    items.add(LayoutSyncItem(localName, SyncStatus.LOCAL_ONLY, localJson, null))
+                }
+                processedNames.add(localName.lowercase().replace(" ", "_"))
             }
-            processedNames.add(localName.lowercase().replace(" ", "_"))
-        }
-        
-        // 2. Process Remote-Only Layouts (in the current directory)
-        for (node in currentRemoteNodes) {
-            if (node is FileNode && node.name.endsWith("_backup.json")) {
-                val cleanRemoteName = node.name.removeSuffix("_backup.json")
-                if (!processedNames.contains(cleanRemoteName)) {
-                    // Find actual layout name inside remote json if possible
-                    val remoteJson = node.content.replace("\r", "")
-                    val displayName = try {
-                        JSONObject(remoteJson).optString("name", cleanRemoteName.replace("_", " ").replaceFirstChar { it.uppercase() })
-                    } catch (e: Exception) {
-                        cleanRemoteName.replace("_", " ").replaceFirstChar { it.uppercase() }
+            
+            for (node in filesList) {
+                if (node is FileNode && node.name.endsWith("_backup.json")) {
+                    val cleanRemoteName = node.name.removeSuffix("_backup.json")
+                    if (!processedNames.contains(cleanRemoteName)) {
+                        val remoteJson = GoogleDriveClient.getFileContent(node.name)?.replace("\r", "")
+                        if (remoteJson != null) {
+                            val displayName = try {
+                                JSONObject(remoteJson).optString("name", cleanRemoteName.replace("_", " ").replaceFirstChar { it.uppercase() })
+                            } catch (e: Exception) {
+                                cleanRemoteName.replace("_", " ").replaceFirstChar { it.uppercase() }
+                            }
+                            items.add(LayoutSyncItem(displayName, SyncStatus.CLOUD_ONLY, null, remoteJson))
+                        }
                     }
-                    items.add(LayoutSyncItem(displayName, SyncStatus.CLOUD_ONLY, null, remoteJson))
                 }
             }
+            syncItems = items
+            isLoading = false
+        } else {
+            filesList = emptyList()
+            syncItems = emptyList()
         }
-        items
+    }
+
+    // Google Sign-In Intent Result Launcher
+    val googleSignInLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.StartActivityForResult()
+    ) { result ->
+        if (result.resultCode == Activity.RESULT_OK) {
+            isLoading = true
+            val task = GoogleSignIn.getSignedInAccountFromIntent(result.data)
+            try {
+                val account = task.getResult(ApiException::class.java)
+                if (account != null) {
+                    coroutineScope.launch {
+                        try {
+                            val token = withContext(Dispatchers.IO) {
+                                GoogleAuthUtil.getToken(
+                                    context,
+                                    account.account ?: android.accounts.Account(account.email!!, "com.google"),
+                                    "oauth2:https://www.googleapis.com/auth/drive.file"
+                                )
+                            }
+                            GoogleDriveClient.connectReal(account.email!!, token)
+                        } catch (e: Exception) {
+                            e.printStackTrace()
+                        } finally {
+                            isLoading = false
+                        }
+                    }
+                }
+            } catch (e: ApiException) {
+                e.printStackTrace()
+                isLoading = false
+            }
+        }
     }
 
     Surface(
@@ -144,7 +209,7 @@ fun CloudSyncScreen(
                 .verticalScroll(rememberScrollState())
                 .padding(horizontal = 8.dp, vertical = 16.dp)
         ) {
-            // Screen Header
+            // Header
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
@@ -167,7 +232,7 @@ fun CloudSyncScreen(
                 )
             }
 
-            // 1. Connection Panel
+            // Connection card
             Card(
                 modifier = Modifier
                     .fillMaxWidth()
@@ -185,31 +250,71 @@ fun CloudSyncScreen(
                     Spacer(modifier = Modifier.height(12.dp))
                     
                     if (!GoogleDriveClient.isConnected) {
-                        Text(
-                            text = "Connect your Google Drive account to backup your layouts and sync them across all your devices.",
-                            style = MaterialTheme.typography.bodyMedium,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant
-                        )
-                        Spacer(modifier = Modifier.height(16.dp))
-                        
-                        TextField(
-                            value = emailInput,
-                            onValueChange = { emailInput = it },
-                            label = { Text("Google Email") },
-                            singleLine = true,
-                            modifier = Modifier.fillMaxWidth()
-                        )
-                        Spacer(modifier = Modifier.height(12.dp))
-                        
-                        Button(
-                            onClick = {
-                                if (emailInput.isNotBlank()) {
-                                    GoogleDriveClient.connect(emailInput.trim())
-                                }
-                            },
-                            modifier = Modifier.fillMaxWidth()
+                        // Simulator toggle
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.SpaceBetween,
+                            modifier = Modifier.fillMaxWidth().padding(bottom = 16.dp)
                         ) {
-                            Text("Connect Simulated Drive")
+                            Text(
+                                text = "Use Sandbox Simulator",
+                                style = MaterialTheme.typography.bodyMedium,
+                                fontWeight = FontWeight.Bold
+                            )
+                            Switch(
+                                checked = useSimulatorToggle,
+                                onCheckedChange = {
+                                    useSimulatorToggle = it
+                                    GoogleDriveClient.useSimulator = it
+                                }
+                            )
+                        }
+                        
+                        if (useSimulatorToggle) {
+                            Text(
+                                text = "Simulate Google Drive authentication and file backup operations (in-memory). No network access required.",
+                                style = MaterialTheme.typography.bodyMedium,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                            )
+                            Spacer(modifier = Modifier.height(12.dp))
+                            TextField(
+                                value = emailInput,
+                                onValueChange = { emailInput = it },
+                                label = { Text("Simulated Email") },
+                                singleLine = true,
+                                modifier = Modifier.fillMaxWidth()
+                            )
+                            Spacer(modifier = Modifier.height(12.dp))
+                            Button(
+                                onClick = {
+                                    if (emailInput.isNotBlank()) {
+                                        GoogleDriveClient.connectSimulated(emailInput.trim())
+                                    }
+                                },
+                                modifier = Modifier.fillMaxWidth()
+                            ) {
+                                Text("Connect Simulator")
+                            }
+                        } else {
+                            Text(
+                                text = "Connect to your live Google Drive. Layout files will be stored directly on your personal Drive account inside the directory of your choice.",
+                                style = MaterialTheme.typography.bodyMedium,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                            )
+                            Spacer(modifier = Modifier.height(16.dp))
+                            Button(
+                                onClick = {
+                                    val gso = GoogleSignInOptions.Builder(GoogleSignInOptions.DEFAULT_SIGN_IN)
+                                        .requestEmail()
+                                        .requestScopes(Scope("https://www.googleapis.com/auth/drive.file"))
+                                        .build()
+                                    val client = GoogleSignIn.getClient(context, gso)
+                                    googleSignInLauncher.launch(client.signInIntent)
+                                },
+                                modifier = Modifier.fillMaxWidth()
+                            ) {
+                                Text("Sign In with Google")
+                            }
                         }
                     } else {
                         Row(
@@ -219,7 +324,7 @@ fun CloudSyncScreen(
                         ) {
                             Column {
                                 Text(
-                                    text = "Connected",
+                                    text = if (GoogleDriveClient.useSimulator) "Connected (Simulator)" else "Connected (Live Drive)",
                                     style = MaterialTheme.typography.bodyLarge,
                                     fontWeight = FontWeight.Bold,
                                     color = Color(0xFF4BB543)
@@ -241,11 +346,22 @@ fun CloudSyncScreen(
                 }
             }
 
-            // 2. Folder Explorer & Navigation (Only visible when connected)
-            if (GoogleDriveClient.isConnected) {
+            // Spinner during network actions
+            if (isLoading) {
+                Box(
+                    modifier = Modifier.fillMaxWidth().height(100.dp),
+                    contentAlignment = Alignment.Center
+                ) {
+                    CircularProgressIndicator()
+                }
+            }
+
+            // Folder Explorer and Synchronization Boards
+            if (GoogleDriveClient.isConnected && !isLoading) {
                 var showNewFolderDialog by remember { mutableStateOf(false) }
                 var newFolderNameInput by remember { mutableStateOf("") }
                 
+                // Disk Explorer Section
                 Card(
                     modifier = Modifier
                         .fillMaxWidth()
@@ -275,10 +391,9 @@ fun CloudSyncScreen(
                         
                         Spacer(modifier = Modifier.height(8.dp))
                         
-                        // Breadcrumbs Path
-                        val breadcrumbText = "My Drive" + if (GoogleDriveClient.currentPath.isEmpty()) "" else " > " + GoogleDriveClient.currentPath.joinToString(" > ")
+                        // Breadcrumbs path Text
                         Text(
-                            text = breadcrumbText,
+                            text = GoogleDriveClient.getBreadcrumbText(),
                             style = MaterialTheme.typography.bodyMedium,
                             fontWeight = FontWeight.Bold,
                             color = MaterialTheme.colorScheme.onSurfaceVariant,
@@ -290,8 +405,8 @@ fun CloudSyncScreen(
                         
                         Spacer(modifier = Modifier.height(8.dp))
                         
-                        // Navigate Up Button
-                        if (GoogleDriveClient.currentPath.isNotEmpty()) {
+                        // Navigation Up row
+                        if (GoogleDriveClient.canNavigateUp()) {
                             Row(
                                 modifier = Modifier
                                     .fillMaxWidth()
@@ -306,8 +421,8 @@ fun CloudSyncScreen(
                             HorizontalDivider()
                         }
                         
-                        // Folders and Files list
-                        if (currentRemoteNodes.isEmpty()) {
+                        // Files/Folders List
+                        if (filesList.isEmpty()) {
                             Text(
                                 text = "Folder is empty.",
                                 style = MaterialTheme.typography.bodyMedium,
@@ -315,13 +430,13 @@ fun CloudSyncScreen(
                                 modifier = Modifier.padding(vertical = 12.dp)
                             )
                         } else {
-                            currentRemoteNodes.forEach { node ->
+                            filesList.forEach { node ->
                                 Row(
                                     modifier = Modifier
                                         .fillMaxWidth()
                                         .clickable {
                                             if (node is FolderNode) {
-                                                GoogleDriveClient.navigateTo(node.name)
+                                                GoogleDriveClient.navigateToFolder(node.name, node.id)
                                             }
                                         }
                                         .padding(vertical = 8.dp),
@@ -342,11 +457,12 @@ fun CloudSyncScreen(
                                         )
                                     }
                                     
-                                    // Option to delete folders/files in the explorer
                                     IconButton(
                                         onClick = {
-                                            GoogleDriveClient.deleteNode(node.name)
-                                            syncTrigger++
+                                            coroutineScope.launch {
+                                                GoogleDriveClient.deleteNode(node.id)
+                                                syncTrigger++
+                                            }
                                         }
                                     ) {
                                         Icon(
@@ -363,7 +479,7 @@ fun CloudSyncScreen(
                     }
                 }
                 
-                // 3. Layouts Sync Board
+                // Sync comparison board
                 Card(
                     modifier = Modifier.fillMaxWidth(),
                     shape = RoundedCornerShape(16.dp)
@@ -392,7 +508,6 @@ fun CloudSyncScreen(
                                     verticalAlignment = Alignment.CenterVertically,
                                     horizontalArrangement = Arrangement.SpaceBetween
                                 ) {
-                                    // Left: Layout Name and Status badge
                                     Column(modifier = Modifier.weight(1f)) {
                                         Text(
                                             text = item.name,
@@ -401,7 +516,6 @@ fun CloudSyncScreen(
                                         )
                                         Spacer(modifier = Modifier.height(4.dp))
                                         
-                                        // Status badge
                                         val badgeColor = when (item.status) {
                                             SyncStatus.SYNCED -> Color(0xFF4BB543)
                                             SyncStatus.LOCAL_ONLY -> Color(0xFF3B82F6)
@@ -429,16 +543,17 @@ fun CloudSyncScreen(
                                         }
                                     }
                                     
-                                    // Right: Sync Actions
                                     Row(verticalAlignment = Alignment.CenterVertically) {
-                                        // Backup button (Upload local content to remote)
+                                        // Upload Backup button
                                         if (item.status == SyncStatus.LOCAL_ONLY || item.status == SyncStatus.MODIFIED) {
                                             IconButton(
                                                 onClick = {
-                                                    val remoteFileName = "${item.name.lowercase().replace(" ", "_")}_backup.json"
-                                                    if (item.localContent != null) {
-                                                        GoogleDriveClient.uploadFile(remoteFileName, item.localContent)
-                                                        syncTrigger++
+                                                    coroutineScope.launch {
+                                                        val remoteFileName = "${item.name.lowercase().replace(" ", "_")}_backup.json"
+                                                        if (item.localContent != null) {
+                                                            GoogleDriveClient.uploadFile(remoteFileName, item.localContent)
+                                                            syncTrigger++
+                                                        }
                                                     }
                                                 }
                                             ) {
@@ -449,25 +564,25 @@ fun CloudSyncScreen(
                                             }
                                         }
                                         
-                                        // Restore button (Download remote content to local)
+                                        // Download Restore button
                                         if (item.status == SyncStatus.CLOUD_ONLY || item.status == SyncStatus.MODIFIED) {
                                             IconButton(
                                                 onClick = {
-                                                    if (item.remoteContent != null) {
-                                                        // 1. Create or overwrite local layout file
-                                                        val layoutsDir = File(context.filesDir, "layouts")
-                                                        if (!layoutsDir.exists()) layoutsDir.mkdirs()
-                                                        
-                                                        val localFile = File(layoutsDir, "${item.name}.json")
-                                                        localFile.writeText(item.remoteContent)
-                                                        
-                                                        // 2. Add layout to order/list if not already present
-                                                        val list = getLayoutsList(context).toMutableList()
-                                                        if (!list.contains(item.name)) {
-                                                            list.add(item.name)
-                                                            com.gridtype.keyboard.saveLayoutsOrder(context, list)
+                                                    coroutineScope.launch {
+                                                        if (item.remoteContent != null) {
+                                                            val layoutsDir = File(context.filesDir, "layouts")
+                                                            if (!layoutsDir.exists()) layoutsDir.mkdirs()
+                                                            
+                                                            val localFile = File(layoutsDir, "${item.name}.json")
+                                                            localFile.writeText(item.remoteContent)
+                                                            
+                                                            val list = getLayoutsList(context).toMutableList()
+                                                            if (!list.contains(item.name)) {
+                                                                list.add(item.name)
+                                                                com.gridtype.keyboard.saveLayoutsOrder(context, list)
+                                                            }
+                                                            syncTrigger++
                                                         }
-                                                        syncTrigger++
                                                     }
                                                 }
                                             ) {
@@ -500,9 +615,21 @@ fun CloudSyncScreen(
                                         if (item.remoteContent != null) {
                                             IconButton(
                                                 onClick = {
-                                                    val remoteFileName = "${item.name.lowercase().replace(" ", "_")}_backup.json"
-                                                    GoogleDriveClient.deleteNode(remoteFileName)
-                                                    syncTrigger++
+                                                    coroutineScope.launch {
+                                                        // Resolve backup name or ID
+                                                        val remoteFileName = "${item.name.lowercase().replace(" ", "_")}_backup.json"
+                                                        // Find ID first in real API mode, or delete by simulated name
+                                                        if (GoogleDriveClient.useSimulator) {
+                                                            GoogleDriveClient.deleteNode("sim_${remoteFileName.lowercase()}")
+                                                        } else {
+                                                            // For real API, search if file exists to get ID, then delete
+                                                            val fileNode = filesList.firstOrNull { it.name == remoteFileName }
+                                                            if (fileNode != null) {
+                                                                GoogleDriveClient.deleteNode(fileNode.id)
+                                                            }
+                                                        }
+                                                        syncTrigger++
+                                                    }
                                                 }
                                             ) {
                                                 Text(
@@ -519,7 +646,7 @@ fun CloudSyncScreen(
                     }
                 }
                 
-                // Create Folder Dialog popup
+                // Create Folder Dialog
                 if (showNewFolderDialog) {
                     AlertDialog(
                         onDismissRequest = { showNewFolderDialog = false },
@@ -531,7 +658,7 @@ fun CloudSyncScreen(
                                 TextField(
                                     value = newFolderNameInput,
                                     onValueChange = { newFolderNameInput = it },
-                                    placeholder = { Text("e.g. My Backups") },
+                                    placeholder = { Text("e.g. Layout Backups") },
                                     singleLine = true,
                                     modifier = Modifier.fillMaxWidth()
                                 )
@@ -541,10 +668,12 @@ fun CloudSyncScreen(
                             Button(
                                 onClick = {
                                     if (newFolderNameInput.isNotBlank()) {
-                                        GoogleDriveClient.createFolder(newFolderNameInput.trim())
-                                        newFolderNameInput = ""
-                                        showNewFolderDialog = false
-                                        syncTrigger++
+                                        coroutineScope.launch {
+                                            GoogleDriveClient.createFolder(newFolderNameInput.trim())
+                                            newFolderNameInput = ""
+                                            showNewFolderDialog = false
+                                            syncTrigger++
+                                        }
                                     }
                                 }
                             ) {
